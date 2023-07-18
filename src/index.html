@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Send a File to the Server</title>
+    <script src="https://unpkg.com/htmx.org@1.9.3"></script>
+  </head>
+  <body>
+    <!-- Standard HTML Post -->
+    <form id="standard" action="/uploads/plain-html" method="post">
+      <input type="file" name="file" />
+      <input type="submit" value="Upload" />
+      <progress id="standard-progress" style="opacity: 0"></progress>
+    </form>
+
+    <!-- HTMX Post -->
+    <form
+      id="htmx-form"
+      hx-encoding="multipart/form-data"
+      hx-post="/uploads/htmx"
+    >
+      <input type="file" name="file" />
+      <button>Upload</button>
+      <progress id="htmx-progress" value="0" max="100"></progress>
+    </form>
+    <!-- Add extra js just to show the progress of the file upload -->
+    <script>
+      // Standard event handling
+      document.addEventListener("DOMContentLoaded", () => {
+        const form = document.querySelector("#standard");
+        /**
+         * @type {HTMLElement}
+         */
+        const progress = document.querySelector("#standard-progress");
+        form.addEventListener("submit", (e) => {
+          e.preventDefault();
+          const formData = new FormData(form);
+          progress.style.opacity = 1;
+          fetch("/uploads/plain-html", {
+            method: "POST",
+            body: formData,
+          }).finally(() => {
+            progress.style.opacity = 0;
+          });
+        });
+      });
+
+      // htmx event handling
+      htmx.on("#htmx-form", "htmx:xhr:progress", function (evt) {
+        htmx
+          .find("#htmx-progress")
+          .setAttribute("value", (evt.detail.loaded / evt.detail.total) * 100);
+      });
+    </script>
+  </body>
+</html>
