@@ -8,22 +8,34 @@
   </head>
   <body>
     <!-- Standard HTML Post -->
-    <form id="standard" action="/uploads/plain-html" method="post">
-      <input type="file" name="file" />
-      <input type="submit" value="Upload" />
-      <progress id="standard-progress" style="opacity: 0"></progress>
+    <form id="standard">
+      <fieldset>
+        <legend>Standard Html Upload</legend>
+        <input type="file" name="my-uploaded-file" />
+        <input type="submit" value="Upload" />
+        <progress id="standard-progress" style="opacity: 0"></progress>
+      </fieldset>
     </form>
 
     <!-- HTMX Post -->
     <form
       id="htmx-form"
       hx-encoding="multipart/form-data"
-      hx-post="/uploads/htmx"
+      hx-post="/uploads"
+      hx-target="#response-target"
+      hx-swap="innerHtml"
     >
-      <input type="file" name="file" />
-      <button>Upload</button>
-      <progress id="htmx-progress" value="0" max="100"></progress>
+      <fieldset>
+        <legend>HTMX Upload</legend>
+        <input type="file" name="my-uploaded-file" />
+        <button>Upload</button>
+        <progress id="htmx-progress" value="0" max="100"></progress>
+      </fieldset>
     </form>
+
+    <section id="response-target"></section>
+    <section id="error-target"></section>
+
     <!-- Add extra js just to show the progress of the file upload -->
     <script>
       // Standard event handling
@@ -33,16 +45,37 @@
          * @type {HTMLElement}
          */
         const progress = document.querySelector("#standard-progress");
+        const target = document.querySelector("#response-target");
+        const errorTarget = document.querySelector("#error-target");
+
         form.addEventListener("submit", (e) => {
           e.preventDefault();
           const formData = new FormData(form);
           progress.style.opacity = 1;
-          fetch("/uploads/plain-html", {
+          fetch("/uploads", {
             method: "POST",
             body: formData,
-          }).finally(() => {
-            progress.style.opacity = 0;
-          });
+          })
+            .then((response) =>
+              response.ok
+                ? response.text()
+                : // send 400 errors to catch handler
+                  response.text().then((content) => Promise.reject(content))
+            )
+            .then((response) => {
+              console.log("Success");
+              target.innerHTML = response;
+            })
+            .catch((error) => {
+              if (error instanceof Error) {
+                errorTarget.textContent = error.message;
+                return;
+              }
+              errorTarget.innerHTML = error;
+            })
+            .finally(() => {
+              progress.style.opacity = 0;
+            });
         });
       });
 
@@ -51,6 +84,9 @@
         htmx
           .find("#htmx-progress")
           .setAttribute("value", (evt.detail.loaded / evt.detail.total) * 100);
+      });
+      htmx.on("htmx:responseError", (error) => {
+        evt.detail.target = htmx.find("#htmx-error-target");
       });
     </script>
   </body>
