@@ -9,4 +9,4 @@ The backends here are
 
 While they're mainly the same as they both are built on top of ASP.NET it is nice to have a focused sample that works as a reference in case you need it.
 
-I'll write a post about this, once it is up I'll link to it.
+You can check the post for this content now https://dev.to/tunaxor/f-file-uploads-with-saturn-and-falco-2ffh :)
